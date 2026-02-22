@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSSS Borrowing Equipment System</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;margin:0;height:100vh;background:#f4f6fb}
+
+/* TOP HEADER */
+.top-header{
+    background:#0f9d58;
+    color:white;
+    padding:15px 20px;
+    display:flex;
+    align-items:center;
+    font-size:20px;
+    font-weight:bold;
+}
+.top-header img{
+    width:40px;
+    height:40px;
+    margin-right:10px;
+}
+
+/* LOGIN PAGE */
+.login-page{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    background:linear-gradient(135deg,#0f9d58,#ffffff);
+}
+.login-content{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+.login-box{
+    background:white;
+    padding:40px;
+    border-radius:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.2);
+    text-align:center;
+    width:320px;
+}
+.login-box input, .login-box select{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border-radius:10px;
+    border:1px solid #ccc;
+}
+.login-box button{
+    width:100%;
+    padding:10px;
+    background:#0f9d58;
+    color:white;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+/* MAIN LAYOUT */
+.main-layout{display:flex;height:calc(100vh - 70px)}
+.sidebar{
+    width:260px;
+    background:linear-gradient(180deg,#0f9d58,#087f46);
+    color:white;
+    padding:20px;
+}
+.sidebar h2{text-align:center;margin-top:0}
+.dashboard-card{
+    background:rgba(255,255,255,0.15);
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:15px;
+    text-align:center;
+    font-weight:bold;
+}
+.logout-btn{
+    margin-top:20px;
+    background:#ffffff;
+    color:#0f9d58;
+    border:none;
+    padding:8px;
+    border-radius:10px;
+    cursor:pointer;
+    width:100%;
+    font-weight:bold;
+}
+
+.main{flex:1;padding:30px;overflow:auto}
+.container{
+    background:white;
+    padding:25px;
+    border-radius:20px;
+    box-shadow:0 10px 25px rgba(0,0,0,.1);
+}
+
+input,button{padding:10px;margin:5px;border-radius:10px;border:1px solid #ccc}
+button{background:#0f9d58;color:white;border:none;cursor:pointer;font-weight:bold}
+button:hover{opacity:.9}
+
+table{width:100%;border-collapse:collapse;margin-top:20px}
+th,td{border:1px solid #ddd;padding:10px;text-align:center}
+th{background:#0f9d58;color:white}
+.overdue{background:#ffcdd2 !important}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="login-page">
+
+  <div class="top-header">
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="CSS Logo">
+      CSSS Borrowing Equipment
+  </div>
+
+  <div class="login-content">
+    <div class="login-box">
+      <h2>System Login</h2>
+      <input type="text" id="username" placeholder="Username">
+      <input type="password" id="password" placeholder="Password">
+      <select id="role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+      </select>
+      <button onclick="login()">Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN SYSTEM -->
+<div id="mainSystem" class="hidden">
+
+  <div class="top-header">
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="CSS Logo">
+      CSSS Borrowing Equipment
+  </div>
+
+  <div class="main-layout">
+
+    <div class="sidebar">
+        <h2>Dashboard</h2>
+        <p id="welcomeUser"></p>
+
+        <div class="dashboard-card">
+            Total Borrowed<br>
+            <span id="totalCount">0</span>
+        </div>
+        <div class="dashboard-card">
+            Returned<br>
+            <span id="returnedCount">0</span>
+        </div>
+        <div class="dashboard-card">
+            Overdue (1+ Day)<br>
+            <span id="overdueCount">0</span>
+        </div>
+
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="main">
+      <div class="container">
+      <h3>Borrow Equipment</h3>
+      <input type="text" id="borrowerName" placeholder="Borrower Name">
+      <input type="text" id="equipmentName" placeholder="Equipment Name">
+      <button onclick="borrow()">Borrow</button>
+
+      <h3>Borrowing Records</h3>
+      <table>
+      <thead>
+      <tr>
+      <th>Borrower</th>
+      <th>Equipment</th>
+      <th>Borrow Time</th>
+      <th>Status</th>
+      <th>Action</th>
+      </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+      </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let records=JSON.parse(localStorage.getItem("records")||"[]");
+let currentRole=null;
+let currentUser=null;
+
+const accounts=[
+ {username:"admin",password:"admin123",role:"admin"},
+ {username:"user",password:"user123",role:"user"}
+];
+
+function login(){
+ const u=document.getElementById("username").value;
+ const p=document.getElementById("password").value;
+ const r=document.getElementById("role").value;
+
+ const found=accounts.find(acc=>acc.username===u && acc.password===p && acc.role===r);
+ if(!found){alert("Invalid login!");return;}
+
+ currentRole=r;
+ currentUser=u;
+ document.getElementById("welcomeUser").innerText="Logged in as: "+u+" ("+r+")";
+ document.getElementById("loginPage").classList.add("hidden");
+ document.getElementById("mainSystem").classList.remove("hidden");
+ render();
+}
+
+function logout(){
+ currentRole=null;
+ currentUser=null;
+ document.getElementById("mainSystem").classList.add("hidden");
+ document.getElementById("loginPage").classList.remove("hidden");
+}
+
+function borrow(){
+ if(currentRole!=="admin" && currentRole!=="user") return;
+ const name=document.getElementById("borrowerName").value.trim();
+ const eq=document.getElementById("equipmentName").value.trim();
+ if(!name||!eq) return alert("Fill all fields");
+ records.push({name,eq,time:Date.now(),returned:false});
+ localStorage.setItem("records",JSON.stringify(records));
+ document.getElementById("borrowerName").value="";
+ document.getElementById("equipmentName").value="";
+ render();
+}
+
+function returnItem(i){
+ if(currentRole!=="admin"){
+    alert("Only admin can return items!");
+    return;
+ }
+ records[i].returned=true;
+ localStorage.setItem("records",JSON.stringify(records));
+ render();
+}
+
+function render(){
+ const body=document.getElementById("tableBody");
+ body.innerHTML="";
+ const now=Date.now();
+ let total=0,returned=0,overdue=0;
+
+ records.forEach((r,i)=>{
+  total++;
+  const tr=document.createElement("tr");
+  const diff=(now-r.time)/(1000*60*60*24);
+
+  let status="Borrowed";
+  if(r.returned){status="Returned";returned++;}
+  else if(diff>=1){tr.classList.add("overdue");status="Overdue";overdue++;}
+
+  tr.innerHTML=`
+    <td>${r.name}</td>
+    <td>${r.eq}</td>
+    <td>${new Date(r.time).toLocaleString()}</td>
+    <td>${status}</td>
+    <td>${r.returned?"-":`<button onclick="returnItem(${i})">Return</button>`}</td>
+  `;
+  body.appendChild(tr);
+ });
+
+ document.getElementById("totalCount").innerText=total;
+ document.getElementById("returnedCount").innerText=returned;
+ document.getElementById("overdueCount").innerText=overdue;
+}
+</script>
+
+</body>
+</html>
